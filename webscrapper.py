@@ -1,6 +1,6 @@
 import requests
 import pandas as pd
-
+from flask import Flask, Request, jsonify
 def get_json_response(url, headers, params):
     response = requests.get(url, headers=headers, params=params)
     return response.json()
@@ -13,7 +13,7 @@ def extract_details_from_json(json_response):
     beds = [prop.get('beds', None) for prop in properties]
     baths = [prop.get('baths', None) for prop in properties]
     area = [prop.get('area', None) for prop in properties]
-    links = [f"https://www.zillow.com{prop.get('detailUrl', '')}" for prop in properties]
+    
     
     data = {
         'Address': addresses, 
@@ -21,7 +21,6 @@ def extract_details_from_json(json_response):
         'Beds': beds, 
         'Baths': baths, 
         'Area (sqft)': area, 
-        'Links': links
     }
     df = pd.DataFrame(data)
     return df
@@ -49,8 +48,17 @@ def main():
         dfs.append(df)
     
     final_df = pd.concat(dfs, ignore_index=True)
-    print(final_df)
+    return final_df.to_json(orient='records')
+
 
 if __name__ == "__main__":
     main()
 
+app = Flask(__name__)
+
+@app.route('/')
+def senddata():
+    data = main()
+    return data
+
+app.run()
